@@ -1,0 +1,80 @@
+<?php
+
+/**
+* Implement hook_help().
+*/
+function system_monitor_help($path, $arg) 
+{
+    if ($path == 'admin/help#system_monitor') {
+        return t('<em>System Activity Monitor</em> Monitor system activity in real time.');
+    }
+}
+
+
+/*
+** implement hook_theme()
+function system_monitor_theme()
+{
+}
+*/
+
+
+/*
+   * Implement hook_block()
+*/
+
+/**
+* Implements hook_menu().
+*
+* Provides a default page to explain what this module does.
+*/
+function system_monitor_menu() {
+	$items['system_monitor'] = array(
+		'page callback' => 'system_monitor_page',
+		'access callback' => TRUE,
+		'title' => 'System Activity Monitor',
+	);
+	return $items;
+}
+
+/**
+ * Simple page function to explain what the block example is about.
+*/
+function system_monitor_page() {
+	$page = array(
+		'#type' => 'markup',
+		'#markup' => t('System Activity Monitor.'),
+	);
+	return $page;
+}
+
+/**
+* Implements hook_block_info().
+*
+* This hook declares what blocks are provided by the module.
+*/
+function system_monitor_block_info() {
+	$blocks['system_monitor_cpu'] = array(
+			'info' => t('Monitor CPU usage'),
+			'status' => TRUE,
+			'region' => 'sidebar_first',
+			);
+	return $blocks;
+}
+
+/**
+* Implements hook_block_view().
+*
+* This hook generates the contents of the blocks themselves.
+*/
+function system_monitor_block_view($delta = '') {
+
+	// The $delta parameter tells us which block is being requested.
+	switch ($delta) {
+	case 'system_monitor_cpu':
+		$block['subject'] = t("CPU Usage ");
+		$block['content'] = '<div id="system_monitor_cpu"></div>';
+		break;
+	}
+	return $block;
+}
