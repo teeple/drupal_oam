@@ -1,5 +1,6 @@
 <?php
 
+require_once( 'phpsysinfo/init.inc.php');
 
 /**
  * Implements hook_init().
@@ -61,9 +62,15 @@ function system_monitor_menu()
  */
 function system_monitor_page()
 {
+	global $sysinfo;
+	
+	dpm( PSI_OS);
+	dpm( $sysinfo, 'sysinfo');
+	$sys = $sysinfo->getSys();
+	
 	$page = array(
 		'#type' => 'markup',
-		'#markup' => t('CPU Load:' ),
+		'#markup' => t('CPU Load:' . $sys->getLoad()),
 	);
 	return $page;
 }

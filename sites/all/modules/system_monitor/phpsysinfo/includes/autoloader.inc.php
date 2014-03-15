@@ -13,6 +13,7 @@
  * @link      http://phpsysinfo.sourceforge.net
  */
 
+
 error_reporting(E_ALL | E_STRICT);
 
 /**
@@ -22,8 +23,10 @@ error_reporting(E_ALL | E_STRICT);
  *
  * @return void
  */
-function __autoload($class_name)
+function my_autoloader($class_name)
 {
+	//dpm( $class_name, 'autoloader');
+	
 	//$class_name = str_replace('-', '', $class_name);
 
     /* case-insensitive folders */
@@ -71,3 +74,5 @@ function errorHandlerPsi($level, $message, $file, $line)
 }
 
 set_error_handler('errorHandlerPsi');
+
+spl_autoload_register('my_autoloader');
