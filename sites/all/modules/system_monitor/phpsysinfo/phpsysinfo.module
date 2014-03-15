@@ -1,0 +1,79 @@
+<?php
+
+/* for phpsysinfo lib */
+define('APP_ROOT', dirname(__FILE__));
+
+/**
+ * internal xml or external
+ * external is needed when running in static mode
+ *
+ * @var boolean
+ */
+define('PSI_INTERNAL_XML', false);
+
+if (version_compare("5.2", PHP_VERSION, ">")) {
+	die("PHP 5.2 or greater is required!!!");
+}
+
+
+require_once APP_ROOT.'/includes/autoloader.inc.php';
+require_once APP_ROOT.'/config.php';
+
+//$os = PSI_OS;
+//$sysinfo = new $os();
+
+
+/**
+ * Implement hook_help().
+ */
+function phpsysinfo_help($path, $arg)
+{
+	if ($path == 'admin/help#phpsysinfo') {
+		return t('<em>System Activity Monitor</em> Monitor system activity in real time.');
+	}
+}
+
+/*
+ ** implement hook_theme()
+ function phpsysinfo_theme()
+ {
+ }
+ */
+
+/*
+ * Implement hook_block()
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a default page to explain what this module does.
+ */
+function phpsysinfo_menu()
+{
+	$items['phpsysinfo'] = array(
+		'page callback' => 'phpsysinfo_page',
+		'access callback' => TRUE,
+		'title' => 'PHP sysinfo',
+	);
+	return $items;
+}
+
+/**
+ * Simple page function to explain what the block example is about.
+ */
+function phpsysinfo_page()
+{
+	dpm( APP_ROOT);
+	
+	$os = PSI_OS;
+	$sysinfo = new $os();
+	$sys = $sysinfo->getSys();
+	
+	$page = array(
+		'#type' => 'markup',
+		'#markup' => t('CPU Load:'), // . $sys->getLoad()),
+	);
+	return $page;
+}
+

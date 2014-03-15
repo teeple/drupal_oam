@@ -1,0 +1,5 @@
+name = PHP system info
+description = "System Activity Monitor"
+core = 7.x
+version = 0.1
+package = phpsysinfo

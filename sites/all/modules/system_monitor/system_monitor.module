@@ -1,34 +1,53 @@
 <?php
 
-/**
-* Implement hook_help().
-*/
-function system_monitor_help($path, $arg) 
-{
-    if ($path == 'admin/help#system_monitor') {
-        return t('<em>System Activity Monitor</em> Monitor system activity in real time.');
-    }
-}
-
-
-/*
-** implement hook_theme()
-function system_monitor_theme()
-{
-}
-*/
-
-
-/*
-   * Implement hook_block()
-*/
 
 /**
-* Implements hook_menu().
-*
-* Provides a default page to explain what this module does.
-*/
-function system_monitor_menu() {
+ * Implements hook_init().
+ */
+function system_monitor_init()
+{
+	drupal_add_js('https://www.google.com/jsapi', 'external');
+}
+
+/**
+ * Implement hook_help().
+ */
+function system_monitor_help($path, $arg)
+{
+	if ($path == 'admin/help#system_monitor') {
+		return t('<em>System Activity Monitor</em> Monitor system activity in real time.');
+	}
+}
+
+/*
+ ** implement hook_theme()
+ function system_monitor_theme()
+ {
+ }
+ */
+
+/*
+ * Implement hook_block()
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a default page to explain what this module does.
+ */
+function system_monitor_menu()
+{
+	// for admin
+	$items['admin/config/system/system_monitor'] = array(
+		'title' => 'Configure System Monitor Module',
+		'description' => 'Configure parameters of System Monitor Module',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('system_monitor_admin_config'),
+		'access arguments' => array('administer users'),
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'system_monitor.admin.inc',
+	);
+
 	$items['system_monitor'] = array(
 		'page callback' => 'system_monitor_page',
 		'access callback' => TRUE,
@@ -39,42 +58,48 @@ function system_monitor_menu() {
 
 /**
  * Simple page function to explain what the block example is about.
-*/
-function system_monitor_page() {
+ */
+function system_monitor_page()
+{
 	$page = array(
 		'#type' => 'markup',
-		'#markup' => t('System Activity Monitor.'),
+		'#markup' => t('CPU Load:' ),
 	);
 	return $page;
 }
 
 /**
-* Implements hook_block_info().
-*
-* This hook declares what blocks are provided by the module.
-*/
-function system_monitor_block_info() {
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function system_monitor_block_info()
+{
 	$blocks['system_monitor_cpu'] = array(
-			'info' => t('Monitor CPU usage'),
-			'status' => TRUE,
-			'region' => 'sidebar_first',
-			);
+		'info' => t('Monitor CPU usage'),
+		'status' => TRUE,
+		'region' => 'sidebar_first',
+	);
 	return $blocks;
 }
 
 /**
-* Implements hook_block_view().
-*
-* This hook generates the contents of the blocks themselves.
-*/
-function system_monitor_block_view($delta = '') {
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function system_monitor_block_view($delta = '')
+{
+
+	drupal_add_js(drupal_get_path('module', 'system_monitor') . 'js/system_monitor.js');
 
 	// The $delta parameter tells us which block is being requested.
 	switch ($delta) {
-	case 'system_monitor_cpu':
-		$block['subject'] = t("CPU Usage ");
-		$block['content'] = '<div id="system_monitor_cpu"></div>';
-		break;
+		case 'system_monitor_cpu' :
+			$interval = variable_get('cpu_interval', array());
+			$block['subject'] = t("CPU Usage ");
+			$block['content'] = "<div id='system_monitor_cpu' interval='$interval'></div>";
+			break;
 	}
 	return $block;
 }
