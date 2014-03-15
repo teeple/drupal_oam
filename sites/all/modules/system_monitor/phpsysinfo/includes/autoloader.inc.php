@@ -23,7 +23,7 @@ error_reporting(E_ALL | E_STRICT);
  *
  * @return void
  */
-function my_autoloader($class_name)
+function __autoload($class_name)
 {
 	//dpm( $class_name, 'autoloader');
 	
@@ -75,4 +75,5 @@ function errorHandlerPsi($level, $message, $file, $line)
 
 set_error_handler('errorHandlerPsi');
 
-spl_autoload_register('my_autoloader');
+// 아래 함수를 쓰게 되면, Drupal의 다른 class autoloading에 문제를 일으킬 수 있음 
+//spl_autoload_register('my_autoloader');

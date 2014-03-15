@@ -1,6 +1,6 @@
 <?php
 
-require_once( 'phpsysinfo/init.inc.php');
+//require_once( 'phpsysinfo/init.inc.php');
 
 /**
  * Implements hook_init().
@@ -53,6 +53,13 @@ function system_monitor_menu()
 		'page callback' => 'system_monitor_page',
 		'access callback' => TRUE,
 		'title' => 'System Activity Monitor',
+	);
+	
+	$items['checksys'] = array(
+		'page callback' => 'checksys_page',
+		'access callback' => TRUE,
+		'title' => 'Check sys',
+		'file' => 'check_sys.inc',
 	);
 	return $items;
 }
