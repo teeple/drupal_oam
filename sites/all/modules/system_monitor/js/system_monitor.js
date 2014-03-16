@@ -1,94 +1,97 @@
-
 (function($) {
+	// define ajax chart
+	function AjaxChart(id, cols, vmax) {
+		// assign id, cols
+		this.id = id;
+		this.cols = cols;
+		this.max = this.index = 100;
+
+		// set initial value
+		this.data = new google.visualization.DataTable();
+		this.data.addColumn('number', 'index');
+		this.initval = [];
+		for ( var i=0; i < cols.length; i++) {
+			this.initval.push(0);
+			this.data.addColumn('number', cols[i]);
+		}
+
+		// set view max
+		this.vmax = vmax;
+
+		// get jquery object
+		var obj = $('#' + id);
+		this.interval = $(obj).attr('interval');
+
+		// build data
+		for ( var i = 0; i < this.max; i++) {
+			this.data.addRow([ i ].concat(this.initval));
+		}
+
+		// build options
+		this.options = {
+			width : $(obj).attr('width'),
+			height : $(obj).attr('height'),
+		}
+		if (vmax > 0) {
+			this.options['vAxis'] = {
+				viewWindowMode : 'explicit',
+				viewWindow : {
+					max : vmax,
+					min : 0,
+				}
+			}
+		}
+
+		// draw initial chart
+		this.chart = new google.visualization.LineChart(document
+				.getElementById(id));
+	}
+
+	// method : draw
+	AjaxChart.prototype.draw = function() {
+		this.chart.draw(this.data, this.options);
+		return this;
+	}
+
+	// method : add data
+	AjaxChart.prototype.addData = function(value) {
+		this.data.removeRow(0);
+		this.data.addRow([ this.index++ ].concat(value));
+		return this;
+	}
+
 	Drupal.behaviors.system_monitor = {
 		attach : function(context, settings) {
 			console.log('system_monitor.js loaded');
-			
+
 			// Callback that creates and populates a data table,
 			// instantiates the pie chart, passes in the data and
 			// draws it.
 			function drawChart() {
 				console.log('draw chart');
-				var chartList = {
-				                 'cpu_load':{
-				                	 id:'system_monitor_cpu_load',
-				                	 columns:['index','usr','nice','sys','load'],
-				                	 initval:[0,0,0,0],
-				                	 vmax:105,
-				                 },
-				                 'cpu_loadavg':{
-				                	 id:'system_monitor_cpu_loadavg',
-				                	 columns:['index','1min','5min','15min'],
-				                	 initval:[0,0,0],
-				                 }
-				};
 				var interval = 3;
-				
-				// prepare data
-				for( var i in chartList) {
-					var c = chartList[i],
-						obj = $('#'+c.id);
-					c.max = c.index = 100;
-					interval = $(obj).attr('interval'); 
-					
-					// build data
-					c.data = new google.visualization.DataTable();
-					for( var j=0; j< c.columns.length; j++) {
-						c.data.addColumn('number',c.columns[j]);
-					}
-					for ( var j=0; j< c.max; j++) {
-						c.data.addRow([j].concat(c.initval));
-					}
-					
-					// build options
-					c.options = {
-							width : $(obj).attr('width'),
-							height : $(obj).attr('height'),
-							/*
-							vAxis : {
-								viewWindowMode : 'explicit',
-								viewWindow : {
-									max : 105,
-									min : 0,
-								}
-							}
-							*/
-					};
-					
-					// draw initial chart
-					c.chart = new google.visualization.LineChart(document
-							.getElementById(c.id));
-					c.chart.draw( c.data, c.options);
-				}
-				console.log(chartList);
-
-				function drawChartWithData(data) {
-					for( var i in data) {
-						var c=chartList[i];
-						c.data.removeRow(0);
-						c.data.addRow([c.index++].concat(data[i].value));
-						c.chart.draw( c.data, c.options);
-					}
-				}
+				var chartList = {
+					'cpu_load' : new AjaxChart('system_monitor_cpu_load', [
+							'usr', 'nice', 'sys', 'load' ], 105).draw(),
+					'cpu_loadavg' : new AjaxChart('system_monitor_cpu_loadavg',
+							[ '1min', '5min', '15min' ], 0).draw(),
+				};
 
 				function tick() {
-					
+
 					var req = $.ajax({
-						  type: "GET",
-						  url: "/drupal_oam/ajax/mon/cpu_load",
-						  dataType: "json",
-						  complete:function(msg) {
-							  console.log(msg);
-							  var rsp=$.parseJSON(msg.response);
-							  drawChartWithData(rsp.data);
-							  /*
-							   * 
-							   data.removeRow(0);
-							  data.addRow([index++].concat(rsp.data.value));
-							  chart.draw(data, options);
-							  */
-						  }
-						});
+						type : "GET",
+						url : "/drupal_oam/ajax/mon/cpu_load",
+						dataType : "json",
+						complete : function(msg) {
+							var rsp = $.parseJSON(msg.response);
+							for ( var i in rsp.data) {
+								var c = chartList[i];
+								c.addData(rsp.data[i].value);
+								c.draw();
+							}
+						}
+					});
 				}
 				setInterval(tick, interval * 1000);
 			}
@@ -102,7 +105,5 @@
 
 		}
 	};
-	
-
 
 })(jQuery);
