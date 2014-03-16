@@ -282,6 +282,21 @@ abstract class BSDCommon extends OS
     }
 
     /**
+     * return cp_time
+     * @return void
+     */
+    protected function cptime()
+    {
+    	if ($fd = $this->grabkey('kern.cp_time')) {
+    		// Find out the CPU load
+    		// user + sys = load
+    		// total = total
+    		preg_match($this->_CPURegExp2, $fd, $res);
+    		$load = $res[2] + $res[3] + $res[4]; // cpu.user + cpu.sys
+    		$total = $res[2] + $res[3] + $res[4] + $res[5]; // cpu.total
+    	}
+    }
+    /**
      * CPU information
      *
      * @return void

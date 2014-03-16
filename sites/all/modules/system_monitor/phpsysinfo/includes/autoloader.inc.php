@@ -76,4 +76,5 @@ function errorHandlerPsi($level, $message, $file, $line)
 set_error_handler('errorHandlerPsi');
 
 // 아래 함수를 쓰게 되면, Drupal의 다른 class autoloading에 문제를 일으킬 수 있음 
+//spl_autoload_extensions('.inc.php');
 //spl_autoload_register('my_autoloader');

@@ -18,7 +18,5 @@ if (version_compare("5.2", PHP_VERSION, ">")) {
 require_once APP_ROOT . '/includes/autoloader.inc.php';
 require_once APP_ROOT . '/config.php';
 
-$os = PSI_OS;
-global $sysinfo;
-$sysinfo = new $os();
+
 

@@ -1,6 +1,7 @@
 <?php
 
-//require_once( 'phpsysinfo/init.inc.php');
+require_once('phpsysinfo/init.inc.php');
+require_once('check_sys.inc');
 
 /**
  * Implements hook_init().
@@ -54,13 +55,23 @@ function system_monitor_menu()
 		'access callback' => TRUE,
 		'title' => 'System Activity Monitor',
 	);
-	
+
 	$items['checksys'] = array(
 		'page callback' => 'checksys_page',
 		'access callback' => TRUE,
 		'title' => 'Check sys',
 		'file' => 'check_sys.inc',
 	);
+
+	// ajax handler
+	$items['ajax/mon/%'] = array(
+		'title' => 'AJAX handler for monitoring',
+		'page callback' => 'ajax_mon_handler',
+		'page arguments' => array(2),
+		'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+	);
+
 	return $items;
 }
 
@@ -69,12 +80,10 @@ function system_monitor_menu()
  */
 function system_monitor_page()
 {
-	global $sysinfo;
-	
-	dpm( PSI_OS);
-	dpm( $sysinfo, 'sysinfo');
+	$os = PSI_OS;
+	$sysinfo = new $os();
 	$sys = $sysinfo->getSys();
-	
+
 	$page = array(
 		'#type' => 'markup',
 		'#markup' => t('CPU Load:' . $sys->getLoad()),
