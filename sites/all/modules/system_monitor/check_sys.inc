@@ -8,6 +8,7 @@ function _check_cpuload()
 	// Average:      7      0      4     90
 	$r = preg_split( "/[\s]+/", $rst);
 	array_shift($r);
+	$r[3] = 100 - intval($r[3]);
 	return array(
 			'key' => array( 'usr', 'nice', 'sys', 'idle'),
 			'value' => array_map('intval', $r));
@@ -37,11 +38,12 @@ function ajax_mon_handler($mode)
 	$data = null;
 	switch( $mode) {
 		case 'cpu_load' :
-			$data = _check_cpuload();
-			break;
-		case 'cpu_loadavg' :
+			$data['cpu_load'] = _check_cpuload();
 			$sys = $sysinfo->getSys();
-			$data = $sys->getLoad();
+			$data['cpu_loadavg'] = array(
+					'key' => array( '1min', '5min', '15min'),
+					'value' => array_map( 'floatval', explode(' ',$sys->getLoad()))
+			);
 			break;
 		default:
 			$data = t('Invalid mode @a', array( '@a' => $mode));

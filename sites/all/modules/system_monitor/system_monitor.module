@@ -1,7 +1,7 @@
 <?php
 
-require_once('phpsysinfo/init.inc.php');
-require_once('check_sys.inc');
+require_once ('phpsysinfo/init.inc.php');
+require_once ('check_sys.inc');
 
 /**
  * Implements hook_init().
@@ -56,13 +56,6 @@ function system_monitor_menu()
 		'title' => 'System Activity Monitor',
 	);
 
-	$items['checksys'] = array(
-		'page callback' => 'checksys_page',
-		'access callback' => TRUE,
-		'title' => 'Check sys',
-		'file' => 'check_sys.inc',
-	);
-
 	// ajax handler
 	$items['ajax/mon/%'] = array(
 		'title' => 'AJAX handler for monitoring',
@@ -80,13 +73,42 @@ function system_monitor_menu()
  */
 function system_monitor_page()
 {
-	$os = PSI_OS;
-	$sysinfo = new $os();
-	$sys = $sysinfo->getSys();
+	if (!defined('PSI_CONFIG_FILE') || !defined('PSI_DEBUG')) {
+		dpm('error');
+		return;
+		/*
+		$tpl = new Template("/templates/html/error_config.html");
+		echo $tpl->fetch();
+		die();
+		 */
+	}
 
+	// redirect to page with and without javascript
+	$html = null;
+	$display = isset($_GET['disp']) ? $_GET['disp'] : strtolower(PSI_DEFAULT_DISPLAY_MODE);
+	switch ($display) {
+		case "static" :
+			$webpage = new WebpageXSLT();
+			$html = $webpage->run();
+			break;
+		case "dynamic" :
+			$webpage = new Webpage();
+			$html = $webpage->run();
+			break;
+		case "xml" :
+			$webpage = new WebpageXML(true, null);
+			$html = $webpage->run();
+			break;
+		default :
+			$tpl = new Template("/templates/html/index_all.html");
+			$html = $tpl->fetch();
+			break;
+	}
+
+	dpm($html);
 	$page = array(
 		'#type' => 'markup',
-		'#markup' => t('CPU Load:' . $sys->getLoad()),
+		'#markup' => $html,
 	);
 	return $page;
 }
@@ -98,8 +120,13 @@ function system_monitor_page()
  */
 function system_monitor_block_info()
 {
-	$blocks['system_monitor_cpu'] = array(
-		'info' => t('Monitor CPU usage'),
+	$blocks['system_monitor_cpu_load'] = array(
+		'info' => t('Monitor CPU Usage'),
+		'status' => TRUE,
+		'region' => 'sidebar_first',
+	);
+	$blocks['system_monitor_cpu_loadavg'] = array(
+		'info' => t('Monitor CPU Load Average'),
 		'status' => TRUE,
 		'region' => 'sidebar_first',
 	);
@@ -113,15 +140,24 @@ function system_monitor_block_info()
  */
 function system_monitor_block_view($delta = '')
 {
-
 	drupal_add_js(drupal_get_path('module', 'system_monitor') . 'js/system_monitor.js');
 
 	// The $delta parameter tells us which block is being requested.
+	$block = array();
 	switch ($delta) {
-		case 'system_monitor_cpu' :
+		case 'system_monitor_cpu_load' :
 			$interval = variable_get('cpu_interval', array());
+			$w = variable_get('cpu_chart_width');
+			$h = variable_get('cpu_chart_height');
 			$block['subject'] = t("CPU Usage ");
-			$block['content'] = "<div id='system_monitor_cpu' interval='$interval'></div>";
+			$block['content'] = "<div id='system_monitor_cpu_load' interval='$interval' width='$w' height='$h'></div>";
+			break;
+		case 'system_monitor_cpu_loadavg':
+			$interval = variable_get('cpu_interval', array());
+			$w = variable_get('cpu_chart_width');
+			$h = variable_get('cpu_chart_height');
+			$block['subject'] = t("CPU Load Average ");
+			$block['content'] = "<div id='system_monitor_cpu_loadavg' interval='$interval' width='$w' height='$h'></div>";
 			break;
 	}
 	return $block;
