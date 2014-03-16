@@ -37,7 +37,7 @@ function ajax_mon_handler($mode)
 
 	$data = null;
 	switch( $mode) {
-		case 'cpu_load' :
+		case 'cpu' :
 			$data['cpu_load'] = _check_cpuload();
 			$sys = $sysinfo->getSys();
 			$data['cpu_loadavg'] = array(

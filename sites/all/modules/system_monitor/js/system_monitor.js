@@ -8,7 +8,7 @@
 
 		// set initial value
 		this.data = new google.visualization.DataTable();
-		this.data.addColumn('number', 'index');
+		this.data.addColumn('string', 'index');
 		this.initval = [];
 		for ( var i=0; i < cols.length; i++) {
 			this.initval.push(0);
@@ -24,7 +24,7 @@
 
 		// build data
 		for ( var i = 0; i < this.max; i++) {
-			this.data.addRow([ i ].concat(this.initval));
+			this.data.addRow([""].concat(this.initval));
 		}
 
 		// build options
@@ -56,7 +56,7 @@
 	// method : add data
 	AjaxChart.prototype.addData = function(value) {
 		this.data.removeRow(0);
-		this.data.addRow([ this.index++ ].concat(value));
+		this.data.addRow([""].concat(value));
 		return this;
 	}
 
@@ -81,7 +81,7 @@
 
 					var req = $.ajax({
 						type : "GET",
-						url : "/drupal_oam/ajax/mon/cpu_load",
+						url : "/drupal_oam/ajax/mon/cpu",
 						dataType : "json",
 						complete : function(msg) {
 							var rsp = $.parseJSON(msg.response);
