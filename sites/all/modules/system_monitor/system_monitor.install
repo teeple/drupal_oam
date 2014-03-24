@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function system_monitor_install()
+{
+	$t = get_t();
+	// runs in both the installer and runtime
+
+	/* Create and save a new content object */
+	$md_server = 'md_server';
+	// machine name of the content type
+
+	// define the node type
+	$md_server_type = array(
+		'type' => $md_server,
+		'name' => $t('MD Server'), // Display name of the content type
+		'base' => 'node_content',
+		'title_label' => $t('Title'),
+		'description' => $t('MD target server'),
+		'custom' => TRUE,
+		'promote' => 0,
+		'status' => 1,
+		'comment' => 0,
+	);
+
+	// set other node defaults not declared above
+	$content_type = node_type_set_defaults($md_server_type);
+
+	// save the content type
+	node_type_save($content_type);
+
+	// Create all the fields we are adding to our content type.
+	// http://api.drupal.org/api/function/field_create_field/7
+	foreach (_server_installed_fields() as $field) {
+		field_create_field($field);
+	}
+
+	// Create all the instances for our fields.
+	// http://api.drupal.org/api/function/field_create_instance/7
+	foreach (_server_installed_instances() as $instance) {
+		$instance['entity_type'] = 'node';
+		$instance['bundle'] = 'md_server';
+		field_create_instance($instance);
+	}
+
+}
+
+function _server_installed_fields()
+{
+	$t = get_t();
+	$fields = array(
+		// text field
+		'ipaddr' => array(
+			'field_name' => 'ipaddr',
+			'label' => $t('IP Address'),
+			'cardinality' => 1,
+			'type' => 'text',
+			'settings' => array('max_length' => 24, ),
+		), );
+
+	return $fields;
+}
+
+function _server_installed_instances()
+{
+	$t = get_t();
+	$instances = array(
+		// instance of the text field above
+		'ipaddr' => array(
+			'field_name' => 'ipaddr',
+			'label' => $t('IP Address'),
+			'cardinality' => 1,
+			'widget' => array(
+				'type' => 'text_textfield',
+				'settings' => array('size' => 24),
+			),
+		), );
+		
+	return $instances;
+}
