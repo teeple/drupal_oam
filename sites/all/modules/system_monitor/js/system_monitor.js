@@ -69,7 +69,8 @@
 			// draws it.
 			function drawChart() {
 				console.log('draw chart');
-				var interval = 3;
+				var interval = 5,
+					mode = "all";	// get all data
 				var chartList = {
 					'cpu_load' : new AjaxChart('system_monitor_cpu_load', [
 							'usr', 'nice', 'sys', 'load' ], 105).draw(),
@@ -81,17 +82,22 @@
 
 					var req = $.ajax({
 						type : "GET",
-						url : "/drupal_oam/ajax/mon/cpu",
+						url : "/drupal_oam/ajax/mon/cpu/" + mode,
 						dataType : "json",
 						complete : function(msg) {
+							console.log( msg.response);
 							var rsp = $.parseJSON(msg.response);
 							for ( var i in rsp.data) {
 								var c = chartList[i];
-								c.addData(rsp.data[i].value);
+								for( var j=0; j< rsp.data[i].value.length; j++) {
+									c.addData(rsp.data[i].value[j]);
+								}
 								c.draw();
 							}
 						}
 					});
+					
+					mode = 'one';	// get one data
 				}
 				setInterval(tick, interval * 1000);
 			}

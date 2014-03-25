@@ -58,10 +58,10 @@ function system_monitor_menu()
 	);
 
 	// ajax handler
-	$items['ajax/mon/%'] = array(
+	$items['ajax/mon/%/%'] = array(
 		'title' => 'AJAX handler for monitoring',
 		'page callback' => 'ajax_mon_handler',
-		'page arguments' => array(2),
+		'page arguments' => array(2,3),
 		'access arguments' => array('access content'),
 		'type' => MENU_CALLBACK,
 	);
