@@ -10,7 +10,7 @@ function _check_cpuload($mode = NULL)
   $stime->sub( new DateInterval('PT500S'));   // 5*100 = 500 seconds
   $sec5 = new DateTime();
   $sec5->sub(new DateInterval('PT5S'));  // 5 seconds
-  
+
   $last_data = &drupal_static(__FUNCTION__);
   if ( ! isset($last_data) && $mode != 'all') {
     if ( $cache = cache_get('system_monitor_cpu_data')) {
@@ -28,7 +28,7 @@ function _check_cpuload($mode = NULL)
       }
     }
   }
-  
+
   // -s option is not working
   $cmd = sprintf('sar -f /tmp/smon/sa%s -s %s | tail -n 100', $etime->format('d'), $stime->format('H:i:s'));
   $rst = exec( $cmd, $lines);
@@ -42,7 +42,7 @@ function _check_cpuload($mode = NULL)
     $r[3] = 100 - intval($r[3]);
     $value[] = array_map( 'intval', $r);
   }
-  
+
   cache_set('system_monitor_cpu_data', array( 'time' => $etime, 'value' => $value), 'cache');
   return array(
       'key' => array( 'usr', 'nice', 'sys', 'idle'),
@@ -64,23 +64,52 @@ function checksys_page()
   return $page;
 }
 
+function _check_cpu_loadavg($mode)
+{
+  $etime = new DateTime();
+  $sec5 = new DateTime();
+  $sec5->sub(new DateInterval('PT5S'));  // 5 seconds
+
+  $last_data = &drupal_static(__FUNCTION__);
+  if ( ! isset($last_data) ) {
+    if ( $cache = cache_get('system_monitor_cpu_loadavg')) {
+      $last_data = $cache->data;
+      //dpm( $last_data['time']->format('H:i:s'), 'last');
+      //dpm( $sec5->format('H:i:s'), 'new');
+      if ( $last_data['time'] >= $sec5) {
+        // return cached data
+        return array(
+            'key' => array( '1min', '5min', '15min'),
+            'value' => $last_data['value'],
+            'cache' => true,
+            //'last' => $last_data,
+        );
+      }
+    }
+  }
+
+  $os = PSI_OS;
+  $sysinfo = new $os();
+  $sys = $sysinfo->getSys();
+  $value = array( array_map( 'floatval', explode(' ',$sys->getLoad())));
+
+  cache_set('system_monitor_cpu_loadavg', array( 'time' => $etime, 'value' => $value), 'cache');
+  return array(
+      'key' => array( '1min', '5min', '15min'),
+      'value' => $value,
+      //'last' => $last_data,
+  );
+}
 
 function ajax_mon_handler( $part, $mode)
 {
-  $os = PSI_OS;
-  $sysinfo = new $os();
-
   ctools_include('ajax');
 
   $data = null;
   switch( $part) {
     case 'cpu' :
       $data['cpu_load'] = _check_cpuload( $mode);
-      $sys = $sysinfo->getSys();
-      $data['cpu_loadavg'] = array(
-          'key' => array( '1min', '5min', '15min'),
-          'value' => array( array_map( 'floatval', explode(' ',$sys->getLoad())))
-      );
+      $data['cpu_loadavg'] = _check_cpu_loadavg($mode);
       break;
     default:
       $data = t('Invalid mode @a', array( '@a' => $part));
