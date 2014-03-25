@@ -7,14 +7,16 @@ interface SysMonTarget
 
 class SysMonCPU implements SysMonTarget {
   private $cmd = '';
+  private $value = '';
   
   function __construct() {
     $etime = new DateTime();
     $this->cmd = sprintf('sar -f /tmp/smon/sa%s | tail -n 60', $etime->format('d'));
   }
-  
+
   public function getDataToSave() {
     $rst = exec( $this->cmd, $lines);
+    $this->value = $rst;
     $r = preg_split( "/[\s]+/", $rst);
     array_shift( $r);
     $r[3] = 100 - intval($r[3]);
@@ -23,8 +25,8 @@ class SysMonCPU implements SysMonTarget {
     $r = preg_split( "/[\s]+/", $lines[count($lines)-2]);
     $value['date'] = date( 'Y-m-d ') . $r[0];
     return $value;
-  }  
-  
+  }
+
   public function save() {
     $data = $this->getDataToSave();
     if ( !empty($data)) {
@@ -38,5 +40,13 @@ class SysMonCPU implements SysMonTarget {
       ));
       $r-> execute();
     }
+  }
+
+  public function getCmd() {
+    return $this->cmd;
+  }
+
+  public function getResult() {
+    return $this->value;
   }
 }

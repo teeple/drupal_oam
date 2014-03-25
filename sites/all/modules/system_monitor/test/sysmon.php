@@ -6,6 +6,7 @@ function test_sysmon_cpu()
 {
   $cpu = new SysMonCPU();
   print_r( $cpu->getDataToSave());
+	print_r( $cpu->getResult());
 }
 
 test_sysmon_cpu();

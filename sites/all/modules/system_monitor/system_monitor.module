@@ -2,7 +2,7 @@
 
 require_once ('phpsysinfo/init.inc.php');
 require_once ('check_sys.inc');
-require_once( 'handler_alter.inc');
+require_once ('handler_alter.inc');
 
 /**
  * Implements hook_init().
@@ -61,7 +61,10 @@ function system_monitor_menu()
 	$items['ajax/mon/%/%'] = array(
 		'title' => 'AJAX handler for monitoring',
 		'page callback' => 'ajax_mon_handler',
-		'page arguments' => array(2,3),
+		'page arguments' => array(
+			2,
+			3
+		),
 		'access arguments' => array('access content'),
 		'type' => MENU_CALLBACK,
 	);
@@ -78,9 +81,9 @@ function system_monitor_page()
 		dpm('error');
 		return;
 		/*
-		$tpl = new Template("/templates/html/error_config.html");
-		echo $tpl->fetch();
-		die();
+		 $tpl = new Template("/templates/html/error_config.html");
+		 echo $tpl->fetch();
+		 die();
 		 */
 	}
 
@@ -153,7 +156,7 @@ function system_monitor_block_view($delta = '')
 			$block['subject'] = t("CPU Usage ");
 			$block['content'] = "<div id='system_monitor_cpu_load' interval='$interval' width='$w' height='$h'></div>";
 			break;
-		case 'system_monitor_cpu_loadavg':
+		case 'system_monitor_cpu_loadavg' :
 			$interval = variable_get('cpu_interval', array());
 			$w = variable_get('cpu_chart_width');
 			$h = variable_get('cpu_chart_height');
@@ -162,4 +165,23 @@ function system_monitor_block_view($delta = '')
 			break;
 	}
 	return $block;
+}
+
+function sysmon_get_nids_by_cond($type, $field_cond = NULL)
+{
+	// find the attribute
+	$query = new EntityFieldQuery();
+	$query->entityCondition('entity_type', 'node')->entityCondition('bundle', $type);
+
+	if ($field_cond) {
+		foreach ($field_cond as $cond) {
+			if ($cond[0] == 'property')
+				$query->propertyCondition($cond[1], $cond[2]);
+			else
+				$query->fieldCondition($cond[0], $cond[1], $cond[2], isset($cond[3]) ? $cond[3] : NULL);
+		}
+	}
+	$result = $query->execute();
+
+	return empty($result) ? NULL : array_keys($result['node']);
 }
