@@ -1,5 +1,6 @@
 <?php 
 
+
 function _check_cpuload($mode = NULL)
 {
   // return format
@@ -128,18 +129,24 @@ function system_monitor_cronapi($op, $job = NULL)
     case 'list':
       return array(
       'system_monitor_cronjob_cpu' => 'Check CPU activity',
+      'system_monitor_cronjob_save_stat' => 'Save statistics data in 5 min',
       );
 
     case 'rule':
       switch($job) {
         case 'system_monitor_cronjob_cpu':
-          return '0,5,10,15,20,25,30,35,40,45,50,55 * * * *';
+          return '0 0 * * *';
+        case 'system_monitor_cronjob_save_stat':
+          return '*/5 * * * *';
       }
 
     case 'execute':
       switch($job) {
         case 'system_monitor_cronjob_cpu':
           system_monitor_cronjob_cpu();
+          break;
+        case 'system_monitor_cronjob_save_stat':
+          system_monitor_cronjob_save_stat();
           break;
       }
 
@@ -162,4 +169,14 @@ function system_monitor_cronjob_cpu()
   $cmd = DRUPAL_ROOT . '/' . drupal_get_path( 'module', 'system_monitor') . '/system_monitor.sh';
   $r = exec($cmd);
   watchdog( 'system_monitor', 'Run @cmd. result=@r', array( '@cmd' => $cmd, '@r' => $r), WATCHDOG_INFO);
+}
+
+/*
+ * save stat data
+*/
+function system_monitor_cronjob_save_stat()
+{
+  $cpu = new SysMonCPU();
+  $data = $cpu->save();
+  dpm($data, 'CPU');
 }

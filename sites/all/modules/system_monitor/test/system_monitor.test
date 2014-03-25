@@ -1,0 +1,28 @@
+<?php 
+
+/**
+ * @file
+ *
+ * Tests for Ultimate Cron's cron parser
+ */
+class SysMonUnitTestCase extends DrupalUnitTestCase {
+  function setUp() {
+    parent::setUp('system_monitor');
+    module_load_include('module', 'system_monitor');
+  }
+
+  public static function getInfo() {
+    return array(
+        'name' => 'SysMonCPU',
+        'description' => 'Test SysMonCPU',
+        'group' => 'SYSTEM_MONITOR',
+    );
+  }
+  
+  private function runTest($options) {
+    require_once dirname(__FILE__) . '/SysMon.class.php';
+  }
+	
+  public function testA1() {
+  }
+}
