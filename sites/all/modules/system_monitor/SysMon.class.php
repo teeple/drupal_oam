@@ -11,22 +11,50 @@ class SysMonCPU implements SysMonTarget {
   
   function __construct() {
     $etime = new DateTime();
-    $this->cmd = sprintf('sar -f /tmp/smon/sa%s | tail -n 60', $etime->format('d'));
+    $this->cmd = sprintf('sar -f /tmp/smon/sa%s | tail -n 60', $etime->format('d'));   
+    if ( PHP_OS == 'Darwin') {
+      $this->idx = array_flip( array( 'usr','nice','sys','idle'));
+    } 
+    else {
+      $this->idx = array_flip( array( 'usr','nice','sys','idle'));
+    }
   }
-
+  
+  // convert line buf to value array
+  private function convert( $line)
+  {
+    $r = preg_split( "/[\s]+/", $line);
+    array_shift( $r);
+    $v = array_map( 'intval', $r);
+    return array( $v[$this->idx['usr']], $v[$this->idx['nice']], $v[$this->idx['sys']], 100 - $v[$this->idx['idle']]);
+  }
+  
+  public function measure( $mode = null) {
+    $rst = exec( $this->cmd, $lines);
+    $this->value = $rst;
+    
+    $value = array();
+    if ( $mode != 'all') {
+      $lines = array( $lines[count($lines)-2]);   // get the last line
+    }
+    foreach( $lines as $l) {
+      $value[] = $this->convert($l);
+    }
+    return $value;    
+  }
+  
+  
   public function getDataToSave() {
     $rst = exec( $this->cmd, $lines);
     $this->value = $rst;
-    $r = preg_split( "/[\s]+/", $rst);
-    array_shift( $r);
-    $r[3] = 100 - intval($r[3]);
-    $value = array_map( 'intval', $r);
+    $value = $this->convert($lines);
+    
     // get time
     $r = preg_split( "/[\s]+/", $lines[count($lines)-2]);
     $value['date'] = date( 'Y-m-d ') . $r[0];
     return $value;
   }
-
+  
   public function save() {
     $data = $this->getDataToSave();
     if ( !empty($data)) {
@@ -50,3 +78,4 @@ class SysMonCPU implements SysMonTarget {
     return $this->value;
   }
 }
+

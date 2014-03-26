@@ -79,22 +79,21 @@ function ftp_scheduler_cronjob_ftp()
       // set next run time
       $next = new DateTime( isset( $node->field_last_run_date['und']) ? $node->field_last_run_date['und'][0]['value'] : "now");
       $next->add( new DateInterval('PT'.$node->field_interval['und'][0]['value'].'M'));
-      $node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-dTH:i:s');
+      $node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-d H:i:s');
 
       // update run time
-      $node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-dTH:i:s');
+      $node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-d H:i:s');
       node_save( $node);
       
       // run now
       $src = node_load($node->field_source_server['und'][0]['target_id']);
       $dst = node_load($node->field_target_server['und'][0]['target_id']);
-      $cmd = t('@root/@path/script/cron_ftp.sh @src @s_dir @file @target @t_dir',
+      $cmd = t('@root/@path/script/cron_ftp.inc -s @src:@s_dir/@file -d @t_dir',
           array( '@root' => DRUPAL_ROOT,
-              '@path' => drupal_get_path( 'module', 'system_monitor'),
+              '@path' => drupal_get_path( 'module', 'ftp_scheduler'),
               '@src' => $src->field_ipaddr['und'][0]['value'],
               '@s_dir' => $node->field_source_dir['und'][0]['value'],
               '@file' => $node->field_file_name['und'][0]['value'],
-              '@target' => $dst->field_ipaddr['und'][0]['value'],
               '@t_dir' => $node->field_target_dir['und'][0]['value']));
       $r = exec($cmd);
       watchdog( 'ftp_scheduler', 'Run "@cmd"', array( '@cmd' => $cmd), WATCHDOG_INFO);

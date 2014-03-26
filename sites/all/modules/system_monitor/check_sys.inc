@@ -30,19 +30,8 @@ function _check_cpuload($mode = NULL)
     }
   }
 
-  // -s option is not working
-  $cmd = sprintf('sar -f /tmp/smon/sa%s -s %s | tail -n 100', $etime->format('d'), $stime->format('H:i:s'));
-  $rst = exec( $cmd, $lines);
-  $value = array();
-  if ( $mode != 'all') {
-    $lines = array( $lines[count($lines)-2]);   // get the last line
-  }
-  foreach( $lines as $l) {
-    $r = preg_split( "/[\s]+/", $l);
-    array_shift( $r);
-    $r[3] = 100 - intval($r[3]);
-    $value[] = array_map( 'intval', $r);
-  }
+  $sysmon = new SysMonCPU();
+  $value = $sysmon->measure();
 
   cache_set('system_monitor_cpu_data', array( 'time' => $etime, 'value' => $value), 'cache');
   return array(

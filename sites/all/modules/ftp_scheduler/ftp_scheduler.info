@@ -3,6 +3,6 @@ description = "FTP Scheduler."
 core = 7.x
 version = 0.1
 package = system_monitor
-//dependencies[] = google_chart_tools
+dependencies[] = system_monitor
 //stylesheets[all][] = ocs_admin.css 
 //stylesheets[all][] = tables.css
