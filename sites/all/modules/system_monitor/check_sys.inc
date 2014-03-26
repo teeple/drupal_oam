@@ -199,14 +199,15 @@ function system_monitor_cronjob_ftp()
       );
   foreach( $nids as $nid) {
     $node = node_load( $nid);
-    if ( ! isset( $node->field_next_run_date['und']) || $node->field_next_run_date['und'][0]['value'] <= $now->format('Y-m-d H:i:s')) {
+//    if ( ! isset( $node->field_next_run_date['und']) || $node->field_next_run_date['und'][0]['value'] >= $now->format('Y-m-d H:i:s')) {
+    if (true) {
       // set next run time
       $next = new DateTime( isset( $node->field_last_run_date['und']) ? $node->field_last_run_date['und'][0]['value'] : "now");
       $next->add( new DateInterval('PT'.$node->field_interval['und'][0]['value'].'M'));
-      $node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-d H:i:s');
+      $node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-dTH:i:s');
 
       // update run time
-      $node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-d H:i:s');
+      $node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-dTH:i:s');
       node_save( $node);
       
       // run now
