@@ -1,0 +1,8 @@
+name = FTP Scheduler
+description = "FTP Scheduler."
+core = 7.x
+version = 0.1
+package = system_monitor
+//dependencies[] = google_chart_tools
+//stylesheets[all][] = ocs_admin.css 
+//stylesheets[all][] = tables.css

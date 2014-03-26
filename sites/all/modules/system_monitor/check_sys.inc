@@ -130,7 +130,6 @@ function system_monitor_cronapi($op, $job = NULL)
       return array(
       'system_monitor_cronjob_cpu' => 'Check CPU activity',
       'system_monitor_cronjob_save_stat' => 'Save statistics data in 5 min',
-      'system_monitor_cronjob_ftp' => 'FTP files',
       );
 
     case 'rule':
@@ -139,8 +138,6 @@ function system_monitor_cronapi($op, $job = NULL)
           return '0 0 * * *';
         case 'system_monitor_cronjob_save_stat':
           return '*/5 * * * *';
-        case 'system_monitor_cronjob_ftp':
-          return '* * * * *';
       }
 
     case 'execute':
@@ -150,9 +147,6 @@ function system_monitor_cronapi($op, $job = NULL)
           break;
         case 'system_monitor_cronjob_save_stat':
           system_monitor_cronjob_save_stat();
-          break;
-        case 'system_monitor_cronjob_ftp':
-          system_monitor_cronjob_ftp();
           break;
       }
 
@@ -187,46 +181,3 @@ function system_monitor_cronjob_save_stat()
   watchdog( 'system_monitor', 'Run "@cmd". result:(@r)', array( '@cmd' => $cpu->getCmd(), '@r' => $cpu->getResult()), WATCHDOG_INFO);
 }
 
-/*
- * FTP
- */
-function system_monitor_cronjob_ftp()
-{
-  $now = new DateTime();
-  // fetch scheduled ftp
-  $nids = sysmon_get_nids_by_cond('md_ftp_schedule', array(
-      array('field_enabled', 'value', '1', '='))
-      );
-  foreach( $nids as $nid) {
-    $node = node_load( $nid);
-//    if ( ! isset( $node->field_next_run_date['und']) || $node->field_next_run_date['und'][0]['value'] >= $now->format('Y-m-d H:i:s')) {
-    if (true) {
-      // set next run time
-      $next = new DateTime( isset( $node->field_last_run_date['und']) ? $node->field_last_run_date['und'][0]['value'] : "now");
-      $next->add( new DateInterval('PT'.$node->field_interval['und'][0]['value'].'M'));
-      $node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-dTH:i:s');
-
-      // update run time
-      $node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-dTH:i:s');
-      node_save( $node);
-      
-      // run now
-      $src = node_load($node->field_source_server['und'][0]['target_id']);
-      $dst = node_load($node->field_target_server['und'][0]['target_id']);
-      $cmd = t('@root/@path/script/cron_ftp.sh @src @s_dir @file @target @t_dir',
-          array( '@root' => DRUPAL_ROOT,
-              '@path' => drupal_get_path( 'module', 'system_monitor'),
-              '@src' => $src->field_ipaddr['und'][0]['value'],
-              '@s_dir' => $node->field_source_dir['und'][0]['value'],
-              '@file' => $node->field_file_name['und'][0]['value'],
-              '@target' => $dst->field_ipaddr['und'][0]['value'],
-              '@t_dir' => $node->field_target_dir['und'][0]['value']));
-      $r = exec($cmd);
-      watchdog( 'system_monitor', 'Run "@cmd"', array( '@cmd' => $cmd), WATCHDOG_INFO);
-    }
-//     else {
-//       watchdog( 'system_monitor', 'No Run', array(), WATCHDOG_INFO);
-//     }
-  }
-//  watchdog( 'system_monitor', 'No Run 2', array(), WATCHDOG_INFO);
-} 
