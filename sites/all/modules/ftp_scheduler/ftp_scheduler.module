@@ -3,6 +3,33 @@
 /**
  * Implement hook_help().
  */
+function ftp_scheduler_help($path, $arg)
+{
+	if ($path == 'admin/help#ftp_scheduler') {
+		return t('<em>FTP scheduler</em>Schedule FTP job list.');
+	}
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a default page to explain what this module does.
+ */
+function ftp_scheduler_menu()
+{
+	// for admin
+	$items['admin/config/system/ftp_scheduler'] = array(
+		'title' => 'Configure FTP scheduler',
+		'description' => 'Configure FTP scheduler',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('ftp_scheduler_admin_config'),
+		'access arguments' => array('administer users'),
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'ftp_scheduler.admin.inc',
+	);
+	
+	return $items;
+}
 
 /*
  ** implement hook_theme()
@@ -15,30 +42,26 @@
  * Implement hook_block()
  */
 
- 
 // hook cron_api
 function ftp_scheduler_cronapi($op, $job = NULL)
 {
-  switch($op) {
-    case 'list':
-      return array(
-      'ftp_scheduler_cronjob_ftp' => 'FTP files',
-      );
+	switch($op) {
+		case 'list' :
+			return array('ftp_scheduler_cronjob_ftp' => 'FTP files', );
 
-    case 'rule':
-      switch($job) {
-        case 'ftp_scheduler_cronjob_ftp':
-          return '* * * * *';
-      }
+		case 'rule' :
+			switch($job) {
+				case 'ftp_scheduler_cronjob_ftp' :
+					return '* * * * *';
+			}
 
-    case 'execute':
-      switch($job) {
-        case 'system_monitor_cronjob_ftp':
-          ftp_scheduler_cronjob_ftp();
-          break;
-      }
-
-  }
+		case 'execute' :
+			switch($job) {
+				case 'system_monitor_cronjob_ftp' :
+					ftp_scheduler_cronjob_ftp();
+					break;
+			}
+	}
 
 }
 
@@ -61,46 +84,75 @@ function fs_get_nids_by_cond($type, $field_cond = NULL)
 	return empty($result) ? NULL : array_keys($result['node']);
 }
 
-/*
- * FTP
- */
 function ftp_scheduler_cronjob_ftp()
 {
-  $now = new DateTime();
-  // fetch scheduled ftp
-  $nids = sysmon_get_nids_by_cond('md_ftp_schedule', array(
-// TODO: check field_enable is not working. Need to check.      
-//      array('field_enabled', 'value', '1', '=')
-      ));
-  foreach( $nids as $nid) {
-    $node = node_load( $nid);
-    if ( $node->field_enabled['und'][0]['value'] == '0') continue;  // disabled
-    if ( ! isset( $node->field_next_run_date['und']) || $node->field_next_run_date['und'][0]['value'] <= $now->format('Y-m-d H:i:s')) {
-      // set next run time
-      $next = new DateTime( isset( $node->field_last_run_date['und']) ? $node->field_last_run_date['und'][0]['value'] : "now");
-      $next->add( new DateInterval('PT'.$node->field_interval['und'][0]['value'].'M'));
-      $node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-d H:i:s');
+	$now = new DateTime();
+	// fetch scheduled ftp
+	$nids = sysmon_get_nids_by_cond('md_ftp_schedule', array(
+		// TODO: check field_enable is not working. Need to check.
+		//      array('field_enabled', 'value', '1', '=')
+	));
+	foreach ($nids as $nid) {
+		$node = node_load($nid);
+		if ($node->field_enabled['und'][0]['value'] == '0')
+			continue;
+		// disabled
 
-      // update run time
-      $node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-d H:i:s');
-      node_save( $node);
-      
-      // run now
-      $src = node_load($node->field_source_server['und'][0]['target_id']);
-      $dst = node_load($node->field_target_server['und'][0]['target_id']);
-      $cmd = t('@root/@path/script/cron_ftp.inc -s @src:@s_dir/@file -d @t_dir',
-          array( '@root' => DRUPAL_ROOT,
-              '@path' => drupal_get_path( 'module', 'ftp_scheduler'),
-              '@src' => $src->field_ipaddr['und'][0]['value'],
-              '@s_dir' => $node->field_source_dir['und'][0]['value'],
-              '@file' => $node->field_file_name['und'][0]['value'],
-              '@t_dir' => $node->field_target_dir['und'][0]['value']));
-      $r = exec($cmd);
-      watchdog( 'ftp_scheduler', 'Run "@cmd"', array( '@cmd' => $cmd), WATCHDOG_INFO);
-    }
-//     else {
-//       watchdog( 'system_monitor', 'No Run', array(), WATCHDOG_INFO);
-//     }
-  }
-//  watchdog( 'system_monitor', 'No Run 2', array(), WATCHDOG_INFO);
-} 
+		if (!isset($node->field_next_run_date['und']) || $node->field_next_run_date['und'][0]['value'] <= $now->format('Y-m-d H:i:s')) {
+			// set next run time
+			$next = new DateTime(isset($node->field_last_run_date['und']) ? $node->field_last_run_date['und'][0]['value'] : "now");
+			$next->add(new DateInterval('PT' . $node->field_interval['und'][0]['value'] . 'M'));
+			$node->field_next_run_date['und'][0]['value'] = $next->format('Y-m-d H:i:s');
+
+			// update run time
+			$node->field_last_run_date['und'][0]['value'] = $now->format('Y-m-d H:i:s');
+			node_save($node);
+
+			// just list files to be transfered
+			$src = node_load($node->field_source_server['und'][0]['target_id']);
+			$dst = node_load($node->field_target_server['und'][0]['target_id']);
+			$cmd = t('@root/@path/script/cron_ftp.inc -u @usr -p @pass -s @src:@s_dir/@file -d @t_dir -n @nid -m list', array(
+				'@root' => DRUPAL_ROOT,
+				'@path' => drupal_get_path('module', 'ftp_scheduler'),
+				'@src' => $src->field_ipaddr['und'][0]['value'],
+				'@s_dir' => $node->field_source_dir['und'][0]['value'],
+				'@file' => $node->field_file_name['und'][0]['value'],
+				'@t_dir' => $node->field_target_dir['und'][0]['value'],
+				'@usr' => $src->field_user_id['und'][0]['value'],
+				'@pass' => $src->field_password['und'][0]['value'],
+				'@nid' => $nid
+			));
+			$r = exec($cmd);
+			watchdog('ftp_scheduler', 'Run "@cmd". result="@r"', array(
+				'@cmd' => $cmd,
+				'@r' => $r
+			), WATCHDOG_INFO);
+		}
+	}
+
+	// now check files to transfer
+	$result = db_query('SELECT * FROM {ftp_scheduler_file_list} n WHERE n.end_date is null limit 5');
+	$record = $result->fetchAll();
+	foreach ($record as $r) {
+		$node = node_load($r->scheduler_nid);
+		// transfer now
+		$src = node_load($node->field_source_server['und'][0]['target_id']);
+		$dst = node_load($node->field_target_server['und'][0]['target_id']);
+		$cmd = t('@root/@path/script/cron_ftp.inc -u @usr -p @pass -s @src:@s_dir/@file -d @t_dir -m transfer --postfix @post &', array(
+			'@root' => DRUPAL_ROOT,
+			'@path' => drupal_get_path('module', 'ftp_scheduler'),
+			'@src' => $src->field_ipaddr['und'][0]['value'],
+			'@s_dir' => $node->field_source_dir['und'][0]['value'],
+			'@file' => $r->files_name,
+			'@t_dir' => $node->field_target_dir['und'][0]['value'],
+			'@usr' => $src->field_user_id['und'][0]['value'],
+			'@pass' => $src->field_password['und'][0]['value'],
+			'@post' => variable_get('ftp_transfered_postfix', array()),
+		));
+		$r = exec($cmd);
+		watchdog('ftp_scheduler', 'Run "@cmd". result="@r"', array(
+			'@cmd' => $cmd,
+			'@r' => $r
+		), WATCHDOG_INFO);
+	}
+}
